@@ -4,6 +4,7 @@ tableName = ""
 
 
 def create_table():
+
     conn = sqlite3.connect('test.db')
 
     conn.execute('''CREATE TABLE TICKETS
@@ -23,6 +24,7 @@ def create_table():
 
 
 def insert(values):
+
     conn = sqlite3.connect('test.db')
 
     conn.execute('''INSERT INTO TICKETS (DATE,START_TIME,DURATION,MOVIE_NAME,PRICE,SEAT,RATING)
@@ -33,6 +35,7 @@ def insert(values):
 
 
 def update(condition):
+
     conn = sqlite3.connect('test.db')
     conn.execute('''UPDATE TICKETS WHERE ''' + condition)
     conn.close()
@@ -40,6 +43,7 @@ def update(condition):
 
 
 def read(select, condition=None):
+
     conn = sqlite3.connect('test.db')
 
     if condition:
@@ -56,6 +60,7 @@ def read(select, condition=None):
 
 
 def delete(condition):
+
     conn = sqlite3.connect('test.db')
     conn.execute('''DELETE FROM TICKETS WHERE''' + str(condition))
     conn.close()
@@ -63,6 +68,7 @@ def delete(condition):
 
 
 def get_fields():
+
     conn = sqlite3.connect('test.db')
     field_names = [(rec[1], rec[2]) for rec in conn.execute('''PRAGMA table_info(TICKETS);''')]
     conn.close()
