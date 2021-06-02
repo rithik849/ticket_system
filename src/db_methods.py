@@ -40,10 +40,13 @@ def insert(values):
 # Add updates to records
 
 
-def update(set_fields,condition):
+def update(set_fields, condition = None):
 
     conn = sqlite3.connect('test.db')
-    conn.execute('''UPDATE TICKETS SET ''' + set_fields + '''WHERE ''' + condition)
+    statement = '''UPDATE TICKETS SET ''' + set_fields
+    if condition:
+        statement = statement + ''' WHERE ''' + condition
+    conn.execute(statement)
     conn.close()
     print("Records updated successfully")
 
@@ -54,10 +57,10 @@ def read(select, condition=None):
 
     conn = sqlite3.connect('test.db')
 
+    statement = '''SELECT ''' + str(select) + '''FROM TICKETS'''
+
     if condition:
-        statement = '''SELECT ''' + str(select) + '''FROM TICKETS WHERE ''' + str(condition)
-    else:
-        statement = '''SELECT ''' + str(select) + '''FROM TICKETS'''
+        statement = statement + ''' WHERE ''' + str(condition)
 
     result = conn.execute(statement)
     result = [rec for rec in result]
