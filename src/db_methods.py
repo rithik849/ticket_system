@@ -15,7 +15,7 @@ def create_table():
     START_TIME TIME NOT NULL,
     DURATION TIME NOT NULL,
     MOVIE_NAME VARCHAR(50) NOT NULL,
-    PRICE numeric(15,2) NOT NULL,
+    PRICE NUMERIC(15,2) NOT NULL,
     STUDIO CHAR(1),
     SEAT CHAR(2) NOT NULL,
     RATING VARCHAR(2) NOT NULL
@@ -34,7 +34,7 @@ def insert(values):
     conn = sqlite3.connect('test.db')
 
     conn.execute('''INSERT INTO TICKETS (DATE,START_TIME,DURATION,MOVIE_NAME,PRICE,STUDIO,SEAT,RATING)
-    VALUES''' + str(values))
+    VALUES ''' + str(values))
     conn.commit()
     conn.close()
     print("Record added successfully")
@@ -77,7 +77,10 @@ def read(select="*", condition=None):
 def delete(condition):
 
     conn = sqlite3.connect('test.db')
-    conn.execute('''DELETE FROM TICKETS WHERE''' + str(condition))
+    if condition:
+        conn.execute('''DELETE FROM TICKETS WHERE''' + str(condition))
+    else:
+        conn.execute('''DELETE FROM TICKETS''')
     conn.close()
     print("Records deleted successfully")
 
