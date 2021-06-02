@@ -3,6 +3,8 @@ import sqlite3
 tableName = ""
 
 # Create table
+
+
 def create_table():
 
     conn = sqlite3.connect('test.db')
@@ -23,6 +25,8 @@ def create_table():
     conn.close()
 
 # Insert operation in sql. Takes the tuple of parameters as a value
+
+
 def insert(values):
 
     conn = sqlite3.connect('test.db')
@@ -34,6 +38,8 @@ def insert(values):
     print("Record added successfully")
 
 # Add updates to records
+
+
 def update(set_fields,condition):
 
     conn = sqlite3.connect('test.db')
@@ -42,6 +48,8 @@ def update(set_fields,condition):
     print("Records updated successfully")
 
 # Selection statements
+
+
 def read(select, condition=None):
 
     conn = sqlite3.connect('test.db')
@@ -59,6 +67,8 @@ def read(select, condition=None):
     return result
 
 # Delete statement
+
+
 def delete(condition):
 
     conn = sqlite3.connect('test.db')
@@ -67,6 +77,8 @@ def delete(condition):
     print("Records deleted successfully")
 
 # Returns the name of each field and their type in sql
+
+
 def get_fields():
 
     conn = sqlite3.connect('test.db')
