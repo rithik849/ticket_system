@@ -1,10 +1,7 @@
 import sqlite3
 
-tableName = ""
 
 # Create table
-
-
 def create_table():
 
     conn = sqlite3.connect('test.db')

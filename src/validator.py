@@ -31,20 +31,28 @@ class Validator:
         # For each field, we add a validation rule.
         for name, field_type in zip(self.field_names, self.field_types):
             if name == 'PRICE':
+                # Check if price is at most 2 decimal places.
                 self.rule_map[name] = lambda x: x*100 % 1 == 0
             elif name == 'THEATER':
+                # Check the theater lettering.
                 self.rule_map[name] = lambda x: re.search('[A-Z]', x) is None
             elif name == 'SEAT':
+                # Check the seat coding.
                 self.rule_map[name] = lambda x: re.search('[A-Z][0-9]', x) is None
             elif name == 'RATING':
+                # Check the age rating.
                 self.rule_map[name] = lambda x: x in ["U", "PG", "12A", "12", "15", "18"]
             elif field_type == 'DATE':
+                # Check the date types conform to  year-month-day.
                 self.rule_map[name] = lambda x: datetime_validation(x, '%Y-%m-%d')
             elif field_type == 'TIME':
+                # Check the time types conform to hour:minutes.
                 self.rule_map[name] = lambda x: datetime_validation(x, '%H:%M')
             elif "VARCHAR" in field_type:
+                # Check the length of a string is in limits of the database constraints.
                 self.rule_map[name] = lambda x: 1 <= len(x) <= int(field_type[8:-1])
             else:
+                # Default returns true always.
                 self.rule_map[name] = lambda x: True
 
     # Returns the rule mapping.
@@ -59,7 +67,7 @@ class Validator:
             if len(record) == self.element_count:
                 # Check the type of each field in the record using the rule map.
                 for field, name in record, self.field_names:
-                    # If there is an error, we add an error to the error set.
+                    # If there is an invalid data element, we add an error to the error set.
                     if not self.rule_map[name](field):
                         self.errors.add("Invalid input for "+name)
             else:
