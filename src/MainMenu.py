@@ -70,6 +70,9 @@ class MainMenu:
             if value == "PRICE":
                 value = float(value)
 
+            if field == "MOVIE_NAME":
+                print(value)
+
             error = not self.validator.get_rule_map()[field](value)
             if not error:
                 newRecord.append(value)
@@ -84,8 +87,11 @@ class MainMenu:
         select = input("Enter fields to be selected separated by commas. \n(Leave blank to select all fields):\n")
         where = input("Enter selection condition \n(Leave blank if you want the whole table):\n")
         select = "*" if select.strip() == '' else str.upper(select.strip())
+
         where = None if where.strip() == '' else where.strip()
+
         selected_records = db_methods.read(select, where)
+
         if selected_records:
             self.table.field_names = selected_records.pop()
             self.table.add_rows(selected_records)

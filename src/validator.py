@@ -73,7 +73,9 @@ class Validator:
     def create_rule_map(self):
         # For each field, we add a validation rule.
         # Return False if invalid
+        counter = 0
         for name, fieldType in zip(self.fieldNames, self.fieldTypes):
+            counter += 1
             if name == 'PRICE':
                 # Check if price is at most 2 decimal places.
                 self.ruleMap[name] = lambda x: re.fullmatch(r'(^[\d]|(^[1-9](\d+)))\.[\d]{2}', str(x)) is not None
@@ -93,11 +95,13 @@ class Validator:
                 # Check the time types conform to hour:minutes.
                 self.ruleMap[name] = lambda x: time_is_valid(x)
             elif "VARCHAR" in fieldType:
+                temp_type = fieldType
                 # Check the length of a string is in limits of the database constraints.
-                self.ruleMap[name] = lambda x: 1 <= len(x) <= int(fieldType[8:-1])
+                self.ruleMap[name] = lambda x: 1 <= len(x) <= int(temp_type[8:-1])
             elif "CHAR" in fieldType:
+                temp_type = fieldType
                 # Check the length of the string is in limits of the database constraints.
-                self.ruleMap[name] = lambda x: len(x) == int(fieldType[5:-1])
+                self.ruleMap[name] = lambda x: len(x) == int(temp_type[5:-1])
             else:
                 # Default returns true always.
                 self.ruleMap[name] = lambda x: True
