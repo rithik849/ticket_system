@@ -1,4 +1,4 @@
-import db_methods
+from db_methods import DatabaseAccessor
 import re
 from datetime import datetime
 
@@ -36,15 +36,19 @@ def time_is_valid(time_to_check):
 class Validator:
 
     def __init__(self):
-
+        self.dbConn = DatabaseAccessor()
+        self.ids = [rec[0] for rec in self.dbConn.read("ID") if rec != ["ID"]]
         self.formatMessages = {}
         self.errors = set()
-        self.fieldNames = db_methods.get_field_names()
-        self.fieldTypes = db_methods.get_field_types()
+        self.fieldNames = self.dbConn.get_field_names()
+        self.fieldTypes = self.dbConn.get_field_types()
         self.element_count = len(self.fieldTypes)
         self.ruleMap = dict()
         self.create_rule_map()
         self.format_messages()
+
+    def disconnect(self):
+        self.dbConn.disconnect()
 
     def get_format_messages(self):
         return self.formatMessages
@@ -53,12 +57,15 @@ class Validator:
 
         for name in self.fieldNames:
             message = "Format of " + name + " should be "
+            if name == "ID":
+                self.formatMessages[name] = message + "a unique 5 character string of letters and/or numbers."
             if name == "DAY":
                 self.formatMessages[name] = message + "YYYY-MM-DD"
             elif name in ["START_TIME", "DURATION"]:
                 self.formatMessages[name] = message + "HH:MM"
             elif name == "MOVIE_NAME":
-                self.formatMessages[name] = message + "of minimum length 1 and maximum length " + str(self.fieldTypes[4][8:-1])
+                self.formatMessages[name] = message + \
+                                            "of minimum length 1 and maximum length " + str(self.fieldTypes[4][8:-1])
             elif name == "PRICE":
                 self.formatMessages[name] = message + "a decimal number at most 2 decimal places."
             elif name == "THEATER":
@@ -76,7 +83,11 @@ class Validator:
         counter = 0
         for name, fieldType in zip(self.fieldNames, self.fieldTypes):
             counter += 1
-            if name == 'PRICE':
+            if name == 'ID':
+                # Check that all ids are unique
+                self.ruleMap[name] = lambda x: x not in [rec[0] for rec in self.dbConn.read("ID") if rec != ['ID']] \
+                                               and re.fullmatch(r'[A-Za-z0-9]{5}', x)
+            elif name == 'PRICE':
                 # Check if price is at most 2 decimal places.
                 self.ruleMap[name] = lambda x: re.fullmatch(r'(^[\d]|(^[1-9](\d+)))\.[\d]{2}', str(x)) is not None
             elif name == 'THEATER':

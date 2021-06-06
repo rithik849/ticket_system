@@ -1,5 +1,5 @@
 from prettytable import PrettyTable
-import db_methods
+from db_methods import DatabaseAccessor
 import sys
 import os
 from validator import Validator
@@ -8,6 +8,7 @@ from validator import Validator
 class MainMenu:
 
     def __init__(self):
+        self.dbConnection = DatabaseAccessor()
         self.validator = Validator()
         self.table = PrettyTable()
         self.options = {
@@ -51,15 +52,17 @@ class MainMenu:
             print(key + " : " + self.options[key])
 
     def quit(self):
-        confirm = input("Are you sure you want to quit?y for yes:\n")
+        confirm = input("Are you sure you want to quit? y for yes:\n")
         if str.lower(confirm.strip()) == 'y':
             print("Quiting Application")
+            self.dbConnection.disconnect()
+            self.validator.disconnect()
             os._exit(1)
 
     def create_row(self):
         # Create Row protocol
         newRecord = []
-        fieldNames = db_methods.get_field_names()[1:]
+        fieldNames = self.dbConnection.get_field_names()
         index = 0
         error = False
         while index < len(fieldNames) and not error:
@@ -80,7 +83,7 @@ class MainMenu:
         if error:
             print(self.validator.get_format_messages()[fieldNames[index]])
         else:
-            db_methods.insert(tuple(newRecord))
+            self.dbConnection.insert(tuple(newRecord))
 
     def select_rows(self):
         # Selection of Rows Protocol
@@ -90,7 +93,7 @@ class MainMenu:
 
         where = None if where.strip() == '' else where.strip()
 
-        selected_records = db_methods.read(select, where)
+        selected_records = self.dbConnection.read(select, where)
 
         if selected_records:
             self.table.field_names = selected_records.pop()
@@ -106,17 +109,19 @@ class MainMenu:
             print("Error: Select which variables should be updated to which values.")
         else:
             if where.strip() == '':
-                db_methods.update(set_fields)
+                self.dbConnection.update(set_fields)
             else:
-                db_methods.update(set_fields, where)
+                self.dbConnection.update(set_fields, where)
 
     def delete_rows(self):
         # Delete Rows protocol
-        where = input("Select records to delete (Leave blank to delete all records):\n")
-        if where.strip() == '':
-            confirm = input("Are you sure you want to delete all records? y for yes:\n")
-            if str.lower(confirm).strip() == 'y':
-                db_methods.delete()
+        where = input("Specify condition for records to delete (Leave blank to delete all records):\n")
+        confirm = input("Are you sure you want to delete these records? y for yes:\n")
+        if str.lower(confirm).strip() == 'y':
+            if where.strip() == '':
+                self.dbConnection.delete()
+            else:
+                self.dbConnection.delete(where)
 
     def print_table(self):
         print(self.table.get_string())
