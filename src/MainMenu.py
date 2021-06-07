@@ -87,19 +87,51 @@ class MainMenu:
 
     def select_rows(self):
         # Selection of Rows Protocol
-        select = input("Enter fields to be selected separated by commas. \n(Leave blank to select all fields):\n")
-        where = input("Enter selection condition \n(Leave blank if you want the whole table):\n")
-        select = "*" if select.strip() == '' else str.upper(select.strip())
+        invalid = False
+        end = False
+        firstIteration = True
+        fieldNames = self.dbConnection.get_field_names()
+        msg = "Enter field to be selected. \n"
+        selected_fields = []
 
-        where = None if where.strip() == '' else where.strip()
+        # Allow user to select multiple fields
+        while not invalid and not end:
+            # In the first iteration, not specifying a value selects all fields.
+            # Otherwise it selects all previously chosen fields.
+            if firstIteration:
+                select = input(msg+"(Leave blank to select all fields):\n")
+            else:
+                select = input(msg+"(Leave blank to stop selecting)\n")
+            # Remove leading and trailing whitespaces
+            select = select.strip()
+            if select == '':
+                if firstIteration:
+                    select = "*"
+                end = True
+            else:
+                firstIteration = False
+                # If the input does not match a field we give an error.
+                # Otherwise add the field to a list of selected fields.
+                if select not in fieldNames:
+                    invalid = True
+                    print("No such field "+select+". Valid fields are: "+str(fieldNames))
+                else:
 
-        selected_records = self.dbConnection.read(select, where)
+                    selected_fields = selected_fields + [select]
+        # Only allow the input of a where clause if the selected fields are valid.
+        if not invalid:
+            where = input("Enter selection condition \n(Leave blank if you want all records):\n")
+            where = None if where.strip() == '' else where.strip()
+            if select == "*":
+                selected_records = self.dbConnection.read(select, where)
+            else:
+                selected_records = self.dbConnection.read(",".join(selected_fields), where)
 
-        if selected_records:
-            self.table.set_fields(selected_records.pop())
-            self.table.set_records(selected_records)
+            if selected_records:
+                self.table.set_fields(selected_records.pop())
+                self.table.set_records(selected_records)
             self.table.print_table()
-        self.table.clear()
+            self.table.clear()
 
     def update_rows(self):
         # Update rows protocol
