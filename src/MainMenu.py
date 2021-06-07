@@ -1,4 +1,4 @@
-from prettytable import PrettyTable
+from table import Table
 from db_methods import DatabaseAccessor
 import sys
 import os
@@ -10,7 +10,7 @@ class MainMenu:
     def __init__(self):
         self.dbConnection = DatabaseAccessor()
         self.validator = Validator()
-        self.table = PrettyTable()
+        self.table = Table()
         self.options = {
             "c": "Create Row",
             "r": "Select Rows",
@@ -96,22 +96,50 @@ class MainMenu:
         selected_records = self.dbConnection.read(select, where)
 
         if selected_records:
-            self.table.field_names = selected_records.pop()
-            self.table.add_rows(selected_records)
-            self.print_table()
+            self.table.set_fields(selected_records.pop())
+            self.table.set_records(selected_records)
+            self.table.print_table()
         self.table.clear()
 
     def update_rows(self):
         # Update rows protocol
-        set_fields = input("Select which fields to assign to what values:\n")
-        where = input("Enter update condition:\n")
-        if set_fields.strip() == '':
-            print("Error: Select which variables should be updated to which values.")
-        else:
-            if where.strip() == '':
-                self.dbConnection.update(set_fields)
+        field_names = self.dbConnection.get_field_names()
+        invalid = False
+        end = False
+        field_update = {}
+        # While we still have values to add, or do not have an invalid input.
+        while not invalid and not end:
+            # Select the field of which the value should be changes
+            set_field = input("Select field to change value:\n(Leave blank to end changes)\n")
+            set_field = set_field.strip()
+            print(":'"+set_field+"'")
+            # Check if the field is a fieldName
+            if set_field in field_names:
+                # Set a value for the field
+                set_value = input("Select value to be changed to:\n")
+                set_value = set_value.strip()
+                # Check the validity of the field
+                if self.validator.get_rule_map()[set_field](set_value):
+                    field_update[set_field] = set_value
+                else:
+                    invalid = True
+            elif set_field == '':
+                # If no fields were added stop execution
+                if len(field_update) == 0:
+                    invalid = True
+                    print("No fields added for update.")
+                else:
+                    end = True
             else:
-                self.dbConnection.update(set_fields, where)
+                invalid = True
+                print(set_field+" field does not exist.\nValid fields: "+str(field_names))
+        # Choose update condition
+        if not invalid:
+            where = input("Enter update condition:\n")
+            if where.strip() == '':
+                self.dbConnection.update(field_update)
+            else:
+                self.dbConnection.update(field_update, where)
 
     def delete_rows(self):
         # Delete Rows protocol
@@ -123,8 +151,6 @@ class MainMenu:
             else:
                 self.dbConnection.delete(where)
 
-    def print_table(self):
-        print(self.table.get_string())
 
 
 def main():

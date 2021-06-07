@@ -15,7 +15,7 @@ class DatabaseAccessor:
         START_TIME TIME NOT NULL,
         DURATION TIME NOT NULL,
         MOVIE_NAME VARCHAR(50) NOT NULL,
-        PRICE NUMERIC NOT NULL,
+        PRICE FLOAT NOT NULL,
         THEATER CHAR(1) NOT NULL,
         SEAT CHAR(2) NOT NULL,
         RATING VARCHAR(3) NOT NULL
@@ -39,21 +39,21 @@ class DatabaseAccessor:
         #     conn.close()
 
     # Add updates to records
-    def update(self, set_fields, condition=None):
+    def update(self, field_updates, condition=None):
 
         try:
-            # conn = sqlite3.connect('test.db')
-            statement = '''UPDATE TICKETS SET ''' + set_fields
+            setString = ""
+            for field, value in field_updates:
+                setString += field+"="+value+", "
+            setString = setString[:-2]
+            statement = '''UPDATE TICKETS SET ''' + setString
             if condition:
                 statement = statement + ''' WHERE ''' + condition
             self.conn.execute(statement)
             self.conn.commit()
-            # conn.close()
             print("Records updated successfully")
         except Exception as e:
             print(e)
-        # finally:
-        #     conn.close()
 
     # Selection statements
     def read(self, select="*", condition=None):

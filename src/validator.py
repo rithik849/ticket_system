@@ -121,6 +121,16 @@ class Validator:
     def get_rule_map(self):
         return self.ruleMap
 
+    # def update_validation(self, toUpdate):
+    #     updateList = toUpdate.split(",")
+    #     for update in updateList:
+    #          = update.split("=")
+    #
+    #         else:
+
+
+
+
     # Used to validate a record for input.
     def validate(self, record):
         # Check the value input is a tuple.
