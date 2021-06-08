@@ -43,12 +43,13 @@ class DatabaseAccessor:
 
         try:
             setString = ""
-            for field, value in field_updates:
-                setString += field+"="+value+", "
+            for key in field_updates.keys():
+                setString += str(key)+"='"+str(field_updates[key])+"', "
             setString = setString[:-2]
             statement = '''UPDATE TICKETS SET ''' + setString
             if condition:
                 statement = statement + ''' WHERE ''' + condition
+            print(statement)
             self.conn.execute(statement)
             self.conn.commit()
             print("Records updated successfully")

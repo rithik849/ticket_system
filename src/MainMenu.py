@@ -144,7 +144,6 @@ class MainMenu:
             # Select the field of which the value should be changes
             set_field = input("Select field to change value:\n(Leave blank to end changes)\n")
             set_field = set_field.strip()
-            print(":'"+set_field+"'")
             # Check if the field is a fieldName
             if set_field in field_names:
                 # Set a value for the field
@@ -154,6 +153,7 @@ class MainMenu:
                 if self.validator.get_rule_map()[set_field](set_value):
                     field_update[set_field] = set_value
                 else:
+                    print(self.validator.get_format_messages()[set_field])
                     invalid = True
             elif set_field == '':
                 # If no fields were added stop execution

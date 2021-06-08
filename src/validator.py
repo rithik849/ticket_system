@@ -53,28 +53,9 @@ class Validator:
     def get_format_messages(self):
         return self.formatMessages
 
-    def format_messages(self):
-
-        for name in self.fieldNames:
-            message = "Format of " + name + " should be "
-            if name == "ID":
-                self.formatMessages[name] = message + "a unique 5 character string of letters and/or numbers."
-            if name == "DAY":
-                self.formatMessages[name] = message + "YYYY-MM-DD"
-            elif name in ["START_TIME", "DURATION"]:
-                self.formatMessages[name] = message + "HH:MM"
-            elif name == "MOVIE_NAME":
-                self.formatMessages[name] = message + \
-                                            "of minimum length 1 and maximum length " + str(self.fieldTypes[4][8:-1])
-            elif name == "PRICE":
-                self.formatMessages[name] = message + "a decimal number at most 2 decimal places."
-            elif name == "THEATER":
-                self.formatMessages[name] = message + "a single capital character from A to Z."
-            elif name == "SEAT":
-                self.formatMessages[name] = message + "a 2 character sequence " + \
-                                            "starting with a capital letter and ending with a digit."
-            elif name == "RATING":
-                self.formatMessages[name] = message + "an age rating option from U, PG, 12A, 12, 15 and 18"
+    # Returns the rule mapping.
+    def get_rule_map(self):
+        return self.ruleMap
 
     # Create a rule mapping for each field.
     def create_rule_map(self):
@@ -117,32 +98,30 @@ class Validator:
                 # Default returns true always.
                 self.ruleMap[name] = lambda x: True
 
-    # Returns the rule mapping.
-    def get_rule_map(self):
-        return self.ruleMap
+    def format_messages(self):
 
-    # def update_validation(self, toUpdate):
-    #     updateList = toUpdate.split(",")
-    #     for update in updateList:
-    #          = update.split("=")
-    #
-    #         else:
+        for name in self.fieldNames:
+            message = "Format of " + name + " should be "
+            if name == "ID":
+                self.formatMessages[name] = message + "a unique 5 character string of letters and/or numbers."
+            if name == "DAY":
+                self.formatMessages[name] = message + "YYYY-MM-DD"
+            elif name in ["START_TIME", "DURATION"]:
+                self.formatMessages[name] = message + "HH:MM"
+            elif name == "MOVIE_NAME":
+                self.formatMessages[name] = message + \
+                                            "of minimum length 1 and maximum length " + str(self.fieldTypes[4][8:-1])
+            elif name == "PRICE":
+                self.formatMessages[name] = message + "a decimal number at most 2 decimal places."
+            elif name == "THEATER":
+                self.formatMessages[name] = message + "a single capital character from A to Z."
+            elif name == "SEAT":
+                self.formatMessages[name] = message + "a 2 character sequence " + \
+                                            "starting with a capital letter and ending with a digit."
+            elif name == "RATING":
+                self.formatMessages[name] = message + "an age rating option from U, PG, 12A, 12, 15 and 18"
+
+#    def table_validation(self):
 
 
 
-
-    # Used to validate a record for input.
-    def validate(self, record):
-        # Check the value input is a tuple.
-        if isinstance(record, tuple):
-            # Check the length of the record.
-            if len(record) == self.element_count:
-                # Check the type of each field in the record using the rule map.
-                for field, name in record, self.fieldNames:
-                    # If there is an invalid data element, we add an error to the error set.
-                    if not self.ruleMap[name](field):
-                        self.errors.add("Invalid input for "+name)
-            else:
-                self.errors.add("The number of elements in this record do not match the number of fields.")
-        else:
-            self.errors.add("Inserted record must be a tuple.")

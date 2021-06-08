@@ -26,6 +26,7 @@ class Table:
             for record in self.records:
                 if row_spacing[field] < len(str(record[index])):
                     row_spacing[field] = len(str(record[index]))
+            index += 1
 
         for size in row_spacing.values():
             spacing += "{:<" + str(size+10) + "} "
