@@ -24,12 +24,34 @@ class DatabaseAccessor:
         print("table created successfully")
         self.conn.commit()
 
+    def hasTable(self, table_name="TICKETS"):
+        table_exists = self.conn.execute("SELECT name FROM sqlite_master WHERE type='table' AND name='"
+                                         + table_name + "'")
+        return bool(table_exists.fetchall())
+
+    def clone_table(self):
+        self.conn.execute('''CREATE TABLE CLONE AS SELECT * FROM TICKETS''')
+        self.conn.execute('''DELETE FROM CLONE''')
+        self.conn.commit()
+
+    def insert_rows(self, records, table_name="TICKETS"):
+        try:
+            if records != []:
+                self.conn.execute('''INSERT INTO ''' + table_name +
+                                  '''(ID,DAY,START_TIME,DURATION,MOVIE_NAME,PRICE,THEATER,SEAT,RATING) 
+                                  VALUES ''' + str(records)[1: -1])
+                self.conn.commit()
+        except Exception as e:
+            print(e)
+            print("read")
+
     # Insert operation in sql. Takes the tuple of parameters as a value
-    def insert(self, values):
+    def insert(self, values, table_name="TICKETS"):
 
         try:
             # conn = sqlite3.connect('test.db')
-            self.conn.execute('''INSERT INTO TICKETS (ID,DAY,START_TIME,DURATION,MOVIE_NAME,PRICE,THEATER,SEAT,RATING)
+            self.conn.execute('''INSERT INTO ''' + table_name + \
+                              ''' (ID,DAY,START_TIME,DURATION,MOVIE_NAME,PRICE,THEATER,SEAT,RATING)
             VALUES ''' + str(values))
             self.conn.commit()
             print("Record added successfully")
@@ -39,14 +61,14 @@ class DatabaseAccessor:
         #     conn.close()
 
     # Add updates to records
-    def update(self, field_updates, condition=None):
+    def update(self, field_updates, condition=None, table_name="TICKETS"):
 
         try:
             setString = ""
             for key in field_updates.keys():
                 setString += str(key)+"='"+str(field_updates[key])+"', "
             setString = setString[:-2]
-            statement = '''UPDATE TICKETS SET ''' + setString
+            statement = '''UPDATE ''' + table_name + ''' SET ''' + setString
             if condition:
                 statement = statement + ''' WHERE ''' + condition
             print(statement)
@@ -57,19 +79,20 @@ class DatabaseAccessor:
             print(e)
 
     # Selection statements
-    def read(self, select="*", condition=None):
+    def read(self, select="*", condition=None, table_name="TICKETS"):
         records = None
         try:
             # conn = sqlite3.connect('test.db')
 
-            statement = '''SELECT ''' + str(select) + ''' FROM TICKETS'''
+            statement = '''SELECT ''' + str(select) + ''' FROM ''' + table_name
 
             if condition:
                 statement = statement + ''' WHERE ''' + str(condition)
 
             result = self.conn.execute(statement)
 
-            records = [list(rec) for rec in result.fetchall()]
+            # records = [list(rec) for rec in result.fetchall()]
+            records = result.fetchall()
             records = records + [[element[0] for element in result.description]]
         except Exception as e:
             print(e)
@@ -79,13 +102,13 @@ class DatabaseAccessor:
         return records
 
     # Delete statement
-    def delete(self, condition=None):
+    def delete(self, condition=None, table_name="TICKETS"):
         try:
             # conn = sqlite3.connect('test.db')
             if condition:
-                self.conn.execute('''DELETE FROM TICKETS WHERE''' + str(condition))
+                self.conn.execute('''DELETE FROM ''' + table_name + ''' WHERE''' + str(condition))
             else:
-                self.conn.execute('''DELETE FROM TICKETS''')
+                self.conn.execute('''DELETE FROM ''' + table_name)
             self.conn.commit()
             # conn.close()
             print("Records deleted successfully")
@@ -94,10 +117,10 @@ class DatabaseAccessor:
         # finally:
         #     conn.close()
 
-    def get_number_of_rows(self):
+    def get_number_of_rows(self, table_name="TICKETS"):
         result = [[0]]
         try:
-            result = self.conn.execute('''SELECT COUNT(*) FROM TICKETS''')
+            result = self.conn.execute('''SELECT COUNT(*) FROM ''' + table_name)
         except Exception as e:
             print(e)
 
@@ -132,15 +155,14 @@ class DatabaseAccessor:
                            ('asdf3', '2021-03-03', '04:00', '01:45', 'Random', 15.00, 'E', 'B3', 'U'),
                            ('wasd1', '2021-03-05', '04:00', '01:45', 'Random', 8.23, 'D', 'B3', '15'),
                            ('qer2W', '2021-06-11', '16:30', '01:41', 'John Wick', 8.43, 'B', 'D5', '18')]
-        for rec in population_data:
-            self.insert(rec)
+        self.insert_rows(population_data)
         self.conn.commit()
         # conn.close()
 
     # Destroy table
-    def destroy(self):
+    def destroy(self, table_name="TICKETS"):
         # conn = sqlite3.connect('test.db')
-        self.conn.execute('DROP TABLE TICKETS')
+        self.conn.execute('DROP TABLE ' + table_name)
         # conn.close()
 
     def __del__(self):

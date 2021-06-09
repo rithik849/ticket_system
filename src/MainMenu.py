@@ -3,12 +3,15 @@ from db_methods import DatabaseAccessor
 import sys
 import os
 from validator import Validator
+from datetime import datetime
+from logFileIO import LogFileIO
 
 
 class MainMenu:
 
     def __init__(self):
         self.dbConnection = DatabaseAccessor()
+        self.setup()
         self.validator = Validator()
         self.table = Table()
         self.options = {
@@ -19,19 +22,42 @@ class MainMenu:
             "h": "Help",
             "q": "Quit"
         }
-        # self.methods = {
-        #     "c": self.create_row(),
-        #     "r": self.select_rows(),
-        #     "u": self.update_rows(),
-        #     "d": self.delete_rows(),
-        #     "h": self.help(),
-        #     "q": self.quit()
-        # }
+        # Clone the database table structure. We perform read operations on the clone only.
+        # And all other operations on both tables.
+        # Validate according to the original table.
+        self.dbConnection.clone_table()
+        # Read all the records in the table.
+        records = self.dbConnection.read()
+        records.pop()
+        # Validate all records, keeping a record of all invalid fields.
+        errors = self.validator.table_validation(records)
+        # Add all valid records into the clone.
+        self.filter_erroneous(records, errors)
+        self.write_errors(errors)
+
+    def setup(self):
+        if not self.dbConnection.hasTable():
+            self.dbConnection.create_table()
+            self.dbConnection.populate()
+
+    def filter_erroneous(self, records, errors):
+        invalid_records = errors.keys()
+
+        valid_records = list(set(records) - set(invalid_records))
+        self.dbConnection.insert_rows(valid_records, "CLONE")
+
+    def write_errors(self, errors):
+        if errors:
+            fileIO = LogFileIO()
+            fileIO.append("Access Time: " + str(datetime.now())+"\n")
+            for key in errors.keys():
+                fileIO.append(str(key)+"\n")
+                fileIO.append(errors[key])
 
     def run(self):
         while True:
             option_input = input("Select option " + str(self.options) + " :")
-            option_input = str.lower(option_input)
+            option_input = str.lower(option_input.strip())
             if option_input not in self.options.keys():
                 print("Not an option")
             elif option_input == "c":
@@ -55,6 +81,7 @@ class MainMenu:
         confirm = input("Are you sure you want to quit? y for yes:\n")
         if str.lower(confirm.strip()) == 'y':
             print("Quiting Application")
+            self.dbConnection.destroy("CLONE")
             self.dbConnection.disconnect()
             self.validator.disconnect()
             os._exit(1)
@@ -70,11 +97,8 @@ class MainMenu:
             value = input("Enter value for " + str.lower(field) + ":")
             value = value.strip()
 
-            if value == "PRICE":
-                value = float(value)
-
-            if field == "MOVIE_NAME":
-                print(value)
+            # if value == "PRICE":
+            #     value = float(value)
 
             error = not self.validator.get_rule_map()[field](value)
             if not error:
@@ -84,6 +108,8 @@ class MainMenu:
             print(self.validator.get_format_messages()[fieldNames[index]])
         else:
             self.dbConnection.insert(tuple(newRecord))
+            self.dbConnection.insert(tuple(newRecord), "CLONE")
+            print("Record added successfully")
 
     def select_rows(self):
         # Selection of Rows Protocol
@@ -123,9 +149,9 @@ class MainMenu:
             where = input("Enter selection condition \n(Leave blank if you want all records):\n")
             where = None if where.strip() == '' else where.strip()
             if select == "*":
-                selected_records = self.dbConnection.read(select, where)
+                selected_records = self.dbConnection.read(select, where, "CLONE")
             else:
-                selected_records = self.dbConnection.read(",".join(selected_fields), where)
+                selected_records = self.dbConnection.read(",".join(selected_fields), where, "CLONE")
 
             if selected_records:
                 self.table.set_fields(selected_records.pop())
@@ -170,8 +196,11 @@ class MainMenu:
             where = input("Enter update condition:\n")
             if where.strip() == '':
                 self.dbConnection.update(field_update)
+                self.dbConnection.update(field_update, "CLONE")
             else:
                 self.dbConnection.update(field_update, where)
+                self.dbConnection.update(field_update, where, "CLONE")
+                print("Records updated successfully")
 
     def delete_rows(self):
         # Delete Rows protocol
@@ -180,9 +209,11 @@ class MainMenu:
         if str.lower(confirm).strip() == 'y':
             if where.strip() == '':
                 self.dbConnection.delete()
+                self.dbConnection.delete("CLONE")
             else:
                 self.dbConnection.delete(where)
-
+                self.dbConnection.delete(where, "CLONE")
+            print("Records deleted successfully")
 
 
 def main():

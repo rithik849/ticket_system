@@ -70,7 +70,8 @@ class Validator:
                                                and re.fullmatch(r'[A-Za-z0-9]{5}', x)
             elif name == 'PRICE':
                 # Check if price is at most 2 decimal places.
-                self.ruleMap[name] = lambda x: re.fullmatch(r'(^[\d]|(^[1-9](\d+)))\.[\d]{2}', str(x)) is not None
+                self.ruleMap[name] = lambda x: re.fullmatch(r'(^[\d]|(^[1-9](\d+)))\.([\d]|[\d]{2})',
+                                                            str(x)) is not None
             elif name == 'THEATER':
                 # Check the theater lettering.
                 self.ruleMap[name] = lambda x: re.fullmatch(r'[A-Z]', x) is not None
@@ -87,12 +88,12 @@ class Validator:
                 # Check the time types conform to hour:minutes.
                 self.ruleMap[name] = lambda x: time_is_valid(x)
             elif "VARCHAR" in fieldType:
-                temp_type = fieldType
                 # Check the length of a string is in limits of the database constraints.
+                temp_type = fieldType
                 self.ruleMap[name] = lambda x: 1 <= len(x) <= int(temp_type[8:-1])
             elif "CHAR" in fieldType:
-                temp_type = fieldType
                 # Check the length of the string is in limits of the database constraints.
+                temp_type = fieldType
                 self.ruleMap[name] = lambda x: len(x) == int(temp_type[5:-1])
             else:
                 # Default returns true always.
@@ -121,7 +122,21 @@ class Validator:
             elif name == "RATING":
                 self.formatMessages[name] = message + "an age rating option from U, PG, 12A, 12, 15 and 18"
 
-#    def table_validation(self):
+    # Used to validate the rows in a table
+    def table_validation(self, records):
+        def checkId(identifier): return [rec[0] for rec in self.dbConn.read()].count(identifier) == 1
+        errors = {}
+        for record in records:
+            firstError = True
+            index = 0
+            for field in self.fieldNames:
+                cond = (index != 0 and not self.ruleMap[field](record[index])) or (index == 0 and not checkId(record[index]))
+                if cond:
 
+                    if firstError:
+                        errors[record] = ""
 
-
+                    errors[record] += "\t" + self.formatMessages[field] + "\n"
+                    firstError = False
+                index += 1
+        return errors
