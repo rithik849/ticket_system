@@ -35,17 +35,20 @@ class MainMenu:
         self.filter_erroneous(records, errors)
         self.write_errors(errors)
 
+    # Setup table if it does not already exist.
     def setup(self):
         if not self.dbConnection.hasTable():
             self.dbConnection.create_table()
             self.dbConnection.populate()
 
+    # Filter out invalid records, and add valid records to the cloned table
     def filter_erroneous(self, records, errors):
         invalid_records = errors.keys()
 
         valid_records = list(set(records) - set(invalid_records))
         self.dbConnection.insert_rows(valid_records, "CLONE")
 
+    # Write the access time and the erroneous records as well as what errors have occurred in each record.
     def write_errors(self, errors):
         if errors:
             fileIO = LogFileIO()
@@ -54,10 +57,13 @@ class MainMenu:
                 fileIO.append(str(key)+"\n")
                 fileIO.append(errors[key])
 
+    # The main run loop of the application.
     def run(self):
         while True:
+            # Select an option
             option_input = input("Select option " + str(self.options) + " :")
             option_input = str.lower(option_input.strip())
+            # Check if the option is valid and apply the correct routine
             if option_input not in self.options.keys():
                 print("Not an option")
             elif option_input == "c":
@@ -73,15 +79,19 @@ class MainMenu:
             elif option_input == "q":
                 self.quit()
 
+    # Help to users
     def help(self):
         for key in self.options.keys():
             print(key + " : " + self.options[key])
 
+    # Quit the application
     def quit(self):
         confirm = input("Are you sure you want to quit? y for yes:\n")
         if str.lower(confirm.strip()) == 'y':
             print("Quiting Application")
+            # Destroy the cloned table for the next time the application is activated.
             self.dbConnection.destroy("CLONE")
+            # Disconnect all database connections.
             self.dbConnection.disconnect()
             self.validator.disconnect()
             os._exit(1)
@@ -92,18 +102,17 @@ class MainMenu:
         fieldNames = self.dbConnection.get_field_names()
         index = 0
         error = False
+        # Enter values for each field
         while index < len(fieldNames) and not error:
             field = fieldNames[index]
             value = input("Enter value for " + str.lower(field) + ":")
             value = value.strip()
 
-            # if value == "PRICE":
-            #     value = float(value)
-
             error = not self.validator.get_rule_map()[field](value)
             if not error:
                 newRecord.append(value)
                 index += 1
+        # If there is an error display it, otherwise insert the new record.
         if error:
             print(self.validator.get_format_messages()[fieldNames[index]])
         else:
@@ -118,7 +127,7 @@ class MainMenu:
         firstIteration = True
         fieldNames = self.dbConnection.get_field_names()
         msg = "Enter field to be selected. \n"
-        selected_fields = []
+        selected_fields = set()
 
         # Allow user to select multiple fields
         while not invalid and not end:
@@ -142,8 +151,7 @@ class MainMenu:
                     invalid = True
                     print("No such field "+select+". Valid fields are: "+str(fieldNames))
                 else:
-
-                    selected_fields = selected_fields + [select]
+                    selected_fields.add(select)
         # Only allow the input of a where clause if the selected fields are valid.
         if not invalid:
             where = input("Enter selection condition \n(Leave blank if you want all records):\n")
@@ -151,7 +159,7 @@ class MainMenu:
             if select == "*":
                 selected_records = self.dbConnection.read(select, where, "CLONE")
             else:
-                selected_records = self.dbConnection.read(",".join(selected_fields), where, "CLONE")
+                selected_records = self.dbConnection.read(",".join(list(selected_fields)), where, "CLONE")
 
             if selected_records:
                 self.table.set_fields(selected_records.pop())

@@ -36,7 +36,7 @@ class DatabaseAccessor:
 
     def insert_rows(self, records, table_name="TICKETS"):
         try:
-            if records != []:
+            if records:
                 self.conn.execute('''INSERT INTO ''' + table_name +
                                   '''(ID,DAY,START_TIME,DURATION,MOVIE_NAME,PRICE,THEATER,SEAT,RATING) 
                                   VALUES ''' + str(records)[1: -1])
