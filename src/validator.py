@@ -37,7 +37,7 @@ class Validator:
 
     def __init__(self):
         self.dbConn = DatabaseAccessor()
-        self.ids = [rec[0] for rec in self.dbConn.read("ID") if rec != ["ID"]]
+        self.ids = [rec[0] for rec in self.dbConn.read("INCIDENT_ID") if rec != ["INCIDENT_ID"]]
         self.formatMessages = {}
         self.errors = set()
         self.fieldNames = self.dbConn.get_field_names()
@@ -64,23 +64,22 @@ class Validator:
         counter = 0
         for name, fieldType in zip(self.fieldNames, self.fieldTypes):
             counter += 1
-            if name == 'ID':
+            if name == 'INCIDENT_ID':
                 # Check that all ids are unique
-                self.ruleMap[name] = lambda x: x not in [rec[0] for rec in self.dbConn.read("ID") if rec != ['ID']] \
-                                               and re.fullmatch(r'[A-Za-z0-9]{5}', x)
-            elif name == 'PRICE':
+                self.ruleMap[name] = lambda x: x not in \
+                                               [
+                                                   rec[0] for rec in self.dbConn.read("INCIDENT_ID")
+                                                   if rec != ['INCIDENT_ID']
+                                               ] and re.fullmatch(r'inc(\d+)', x)
+            elif name == 'STATUS':
                 # Check if price is at most 2 decimal places.
-                self.ruleMap[name] = lambda x: re.fullmatch(r'(^[\d]|(^[1-9](\d+)))\.([\d]|[\d]{2})',
-                                                            str(x)) is not None
-            elif name == 'THEATER':
-                # Check the theater lettering.
-                self.ruleMap[name] = lambda x: re.fullmatch(r'[A-Z]', x) is not None
-            elif name == 'SEAT':
+                self.ruleMap[name] = lambda x: str.upper(str(x)) in ["NEW", "IN PROGRESS", "COMPLETE"]
+            elif name == 'PRIORITY':
                 # Check the seat coding.
-                self.ruleMap[name] = lambda x: re.fullmatch(r'[A-Z][0-9]', x) is not None
-            elif name == 'RATING':
+                self.ruleMap[name] = lambda x: str(x) in ["1", "2", "3"]
+            elif name in ['RAISED_BY', 'ASSIGNED_TO']:
                 # Check the age rating.
-                self.ruleMap[name] = lambda x: x in ["U", "PG", "12A", "12", "15", "18"]
+                self.ruleMap[name] = lambda x: re.fullmatch(r'emp([\d]{2})', x) is not None
             elif fieldType == 'DATE':
                 # Check the date types conform to  year-month-day.
                 self.ruleMap[name] = lambda x: date_is_valid(x)
@@ -103,34 +102,35 @@ class Validator:
 
         for name in self.fieldNames:
             message = "Format of " + name + " should be "
-            if name == "ID":
-                self.formatMessages[name] = message + "a unique 5 character string of letters and/or numbers."
+            if name == "INCIDENT_ID":
+                self.formatMessages[name] = message + \
+                                            "a unique string starting with 'inc' " + \
+                                            "and ending with 1 or more digits."
             if name == "DAY":
                 self.formatMessages[name] = message + "YYYY-MM-DD"
-            elif name in ["START_TIME", "DURATION"]:
+            elif name in ["INCIDENT_TIME"]:
                 self.formatMessages[name] = message + "HH:MM"
-            elif name == "MOVIE_NAME":
+            elif name in ["RAISED_BY", "EMPLOYEE_ASSIGNED"]:
                 self.formatMessages[name] = message + \
-                                            "of minimum length 1 and maximum length " + str(self.fieldTypes[4][8:-1])
-            elif name == "PRICE":
-                self.formatMessages[name] = message + "a decimal number at most 2 decimal places."
-            elif name == "THEATER":
-                self.formatMessages[name] = message + "a single capital character from A to Z."
-            elif name == "SEAT":
-                self.formatMessages[name] = message + "a 2 character sequence " + \
-                                            "starting with a capital letter and ending with a digit."
-            elif name == "RATING":
-                self.formatMessages[name] = message + "an age rating option from U, PG, 12A, 12, 15 and 18"
+                                            "a unique 5 character string starting with 'emp' " + \
+                                            "and ending with 2 digits."
+            elif name == "STATUS":
+                self.formatMessages[name] = message + "an option from {'New','In Progress','Complete'}"
+            elif name == "TEAM":
+                self.formatMessages[name] = message + "a name of a group resolving the incident."
+            elif name == "PRIORITY":
+                self.formatMessages[name] = message + "a number from and including 1 to 3, " + \
+                                            "with 1 being the highest priority"
 
     # Used to validate the rows in a table
     def table_validation(self, records):
-        def checkId(identifier): return [rec[0] for rec in self.dbConn.read()].count(identifier) == 1
+        def check_id(identifier): return [rec[0] for rec in self.dbConn.read()].count(identifier) == 1
         errors = {}
         for record in records:
             firstError = True
             index = 0
             for field in self.fieldNames:
-                cond = (index != 0 and not self.ruleMap[field](record[index])) or (index == 0 and not checkId(record[index]))
+                cond = (index != 0 and not self.ruleMap[field](record[index])) or (index == 0 and not check_id(record[index]))
                 if cond:
 
                     if firstError:

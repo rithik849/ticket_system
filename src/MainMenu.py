@@ -51,11 +51,13 @@ class MainMenu:
     # Write the access time and the erroneous records as well as what errors have occurred in each record.
     def write_errors(self, errors):
         if errors:
+            to_write = ""
             fileIO = LogFileIO()
-            fileIO.append("Access Time: " + str(datetime.now())+"\n")
+            to_write = "Access Time: " + str(datetime.now())+"\n"
             for key in errors.keys():
-                fileIO.append(str(key)+"\n")
-                fileIO.append(errors[key])
+                to_write += str(key)+"\n"
+                to_write += errors[key]
+            fileIO.append(to_write)
 
     # The main run loop of the application.
     def run(self):
@@ -116,9 +118,10 @@ class MainMenu:
         if error:
             print(self.validator.get_format_messages()[fieldNames[index]])
         else:
-            self.dbConnection.insert(tuple(newRecord))
-            self.dbConnection.insert(tuple(newRecord), "CLONE")
-            print("Record added successfully")
+            table_success = self.dbConnection.insert(tuple(newRecord))
+            clone_success = self.dbConnection.insert(tuple(newRecord), "CLONE")
+            if table_success and clone_success:
+                print("Record added successfully")
 
     def select_rows(self):
         # Selection of Rows Protocol
@@ -202,12 +205,15 @@ class MainMenu:
         # Choose update condition
         if not invalid:
             where = input("Enter update condition:\n")
+            table_success = False
+            clone_success = False
             if where.strip() == '':
-                self.dbConnection.update(field_update)
-                self.dbConnection.update(field_update, "CLONE")
+                table_success = self.dbConnection.update(field_update)
+                clone_success = self.dbConnection.update(field_update, "CLONE")
             else:
-                self.dbConnection.update(field_update, where)
-                self.dbConnection.update(field_update, where, "CLONE")
+                table_success = self.dbConnection.update(field_update, where)
+                clone_success = self.dbConnection.update(field_update, where, "CLONE")
+            if table_success and clone_success:
                 print("Records updated successfully")
 
     def delete_rows(self):
@@ -215,13 +221,16 @@ class MainMenu:
         where = input("Specify condition for records to delete (Leave blank to delete all records):\n")
         confirm = input("Are you sure you want to delete these records? y for yes:\n")
         if str.lower(confirm).strip() == 'y':
+            table_success = False
+            clone_success = False
             if where.strip() == '':
-                self.dbConnection.delete()
-                self.dbConnection.delete("CLONE")
+                table_success = self.dbConnection.delete()
+                clone_success = self.dbConnection.delete("CLONE")
             else:
-                self.dbConnection.delete(where)
-                self.dbConnection.delete(where, "CLONE")
-            print("Records deleted successfully")
+                table_success = self.dbConnection.delete(where)
+                clone_success = self.dbConnection.delete(where, "CLONE")
+            if table_success and clone_success:
+                print("Records deleted successfully")
 
 
 def main():
