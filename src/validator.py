@@ -72,13 +72,13 @@ class Validator:
                                                    if rec != ['INCIDENT_ID']
                                                ] and re.fullmatch(r'inc(\d+)', x)
             elif name == 'STATUS':
-                # Check if price is at most 2 decimal places.
+                # Check the status is one from the group
                 self.ruleMap[name] = lambda x: str.upper(str(x)) in ["NEW", "IN PROGRESS", "COMPLETE"]
             elif name == 'PRIORITY':
-                # Check the seat coding.
+                # Check priority is either 1 2 or 3.
                 self.ruleMap[name] = lambda x: str(x) in ["1", "2", "3"]
             elif name in ['RAISED_BY', 'ASSIGNED_TO']:
-                # Check the age rating.
+                # Check that and employee id format is used.
                 self.ruleMap[name] = lambda x: re.fullmatch(r'emp([\d]{2})', x) is not None
             elif fieldType == 'DATE':
                 # Check the date types conform to  year-month-day.
