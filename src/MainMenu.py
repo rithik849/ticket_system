@@ -100,7 +100,9 @@ class MainMenu(UI):
         help_text = ""
         for key in self.options.keys():
             help_text += key + " : " + self.options[key] + "\n"
-        self.style_print(help_text)
+
+        help_text += "To return to the Main Menu at any point press ';'"
+        self.style_print(help_text, "g")
 
     # Quit the application
     def quit(self):
