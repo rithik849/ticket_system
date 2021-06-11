@@ -1,7 +1,10 @@
+from UI import UI
 
-class Table:
+
+class Table(UI):
 
     def __init__(self):
+        super().__init__()
         self.fields = []
         self.records = []
 
@@ -31,7 +34,9 @@ class Table:
         for size in row_spacing.values():
             spacing += "{:<" + str(size+10) + "} "
 
-        print(spacing.format(*self.fields))
+        self.style_print(spacing.format(*self.fields), "g*")
 
         for record in self.records:
-            print(spacing.format(*record))
+            self.style_print(spacing.format(*record), "t")
+
+

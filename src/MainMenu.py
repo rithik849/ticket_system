@@ -1,15 +1,18 @@
-from table import Table
+
 from db_methods import DatabaseAccessor
 import sys
 import os
 from validator import Validator
 from datetime import datetime
 from logFileIO import LogFileIO
+from UI import UI
+from table import Table
 
 
-class MainMenu:
+class MainMenu(UI):
 
     def __init__(self):
+        super().__init__()
         self.dbConnection = DatabaseAccessor()
         self.setup()
         self.validator = Validator()
@@ -67,11 +70,11 @@ class MainMenu:
         try:
             while True:
                 # Select an option
-                option_input = input("Select option " + str(self.options) + " :")
+                option_input = self.style_input("Select option " + str(self.options) + " :", "b")
                 option_input = str.lower(option_input.strip())
                 # Check if the option is valid and apply the correct routine
-                if option_input not in self.options.keys():
-                    print("Not an option")
+                if option_input == ";":
+                    self.style_print("Already at main menu.", "g")
                 elif option_input == "c":
                     self.create_row()
                 elif option_input == "r":
@@ -85,22 +88,27 @@ class MainMenu:
                 elif option_input == "q":
                     self.quit()
                 elif option_input == ";":
-                    print("Already at main menu.")
+                    self.style_print("Already at main menu.", "g")
+                else:
+                    self.style_print("Not an option", "r*")
         except EOFError:
-            print("\nQuiting Application")
+            self.style_print("\nQuiting Application", "g")
 
     # Help to users
     def help(self):
+
+        help_text = ""
         for key in self.options.keys():
-            print(key + " : " + self.options[key])
+            help_text += key + " : " + self.options[key] + "\n"
+        self.style_print(help_text)
 
     # Quit the application
     def quit(self):
-        confirm = input("Are you sure you want to quit? y for yes:\n")
+        confirm = self.style_input("Are you sure you want to quit? y for yes:\n", "y~")
         if self.isReturn(confirm.strip()):
-            print("Returning to Main Menu.")
-        if str.lower(confirm.strip()) == 'y':
-            print("Quiting Application")
+            self.style_print("Returning to Main Menu", "g")
+        elif str.lower(confirm.strip()) == 'y':
+            self.style_print("Quiting Application", "g")
             self.__del__()
             os._exit(1)
 
@@ -121,7 +129,7 @@ class MainMenu:
         # Enter values for each field
         while index < len(fieldNames) and not error and not return_to_menu:
             field = fieldNames[index]
-            value = input("Enter value for " + str.lower(field) + ":")
+            value = self.style_input("Enter value for " + str.lower(field) + ":", "c")
             value = value.strip()
             return_to_menu = self.isReturn(value)
             if not return_to_menu:
@@ -131,14 +139,14 @@ class MainMenu:
                     index += 1
         # If there is an error display it, otherwise insert the new record.
         if return_to_menu:
-            print("Returning to menu.")
+            self.style_print("Returning to Main Menu", "g")
         elif error:
-            print(self.validator.get_format_messages()[fieldNames[index]])
+            self.style_print(self.validator.get_format_messages()[fieldNames[index]], "r")
         else:
             table_success = self.dbConnection.insert(tuple(newRecord))
             clone_success = self.dbConnection.insert(tuple(newRecord), "CLONE")
             if table_success and clone_success:
-                print("Record added successfully")
+                self.style_print("Record added successfully", "g")
 
     def select_rows(self):
         # Selection of Rows Protocol
@@ -156,9 +164,9 @@ class MainMenu:
             # In the first iteration, not specifying a value selects all fields.
             # Otherwise it selects all previously chosen fields.
             if firstIteration:
-                select = input(msg+"(Leave blank to select all fields):\n")
+                select = self.style_input(msg+"(Leave blank to select all fields):\n", "c")
             else:
-                select = input(msg+"(Leave blank to stop selecting)\n")
+                select = self.style_input(msg+"(Leave blank to stop selecting)\n", "c")
             # Remove leading and trailing whitespaces
             select = select.strip()
             return_to_menu = self.isReturn(select)
@@ -173,12 +181,12 @@ class MainMenu:
                     # Otherwise add the field to a list of selected fields.
                     if select not in fieldNames:
                         invalid = True
-                        print("No such field "+select+". Valid fields are: "+str(fieldNames))
+                        self.style_print("No such field "+select+". Valid fields are: "+str(fieldNames), "r")
                     else:
                         selected_fields.add(select)
         # Only allow the input of a where clause if the selected fields are valid.
         if not invalid and not return_to_menu:
-            where = input("Enter selection condition \n(Leave blank if you want all records):\n")
+            where = self.style_input("Enter selection condition \n(Leave blank if you want all records):\n", "c")
             where = None if where.strip() == '' else where.strip()
             return_to_menu = self.isReturn(where)
             if not return_to_menu:
@@ -193,7 +201,7 @@ class MainMenu:
                 self.table.print_table()
                 self.table.clear()
         if return_to_menu:
-            print("Returning to menu.")
+            self.style_print("Returning to Main Menu", "g")
 
     def update_rows(self):
         # Update rows protocol
@@ -205,14 +213,14 @@ class MainMenu:
         # While we still have values to add, or do not have an invalid input.
         while not invalid and not end and not return_to_menu:
             # Select the field of which the value should be changes
-            set_field = input("Select field to change value:\n(Leave blank to end changes)\n")
+            set_field = self.style_input("Select field to change value:\n(Leave blank to end changes)\n", "c")
             set_field = set_field.strip()
             return_to_menu = self.isReturn(set_field)
             if not return_to_menu:
                 # Check if the field is a fieldName
                 if set_field in field_names:
                     # Set a value for the field
-                    set_value = input("Select value to be changed to:\n")
+                    set_value = self.style_input("Select value to be changed to:\n", "c*")
                     set_value = set_value.strip()
                     if self.isReturn(set_value):
                         return_to_menu = True
@@ -221,21 +229,21 @@ class MainMenu:
                         if self.validator.get_rule_map()[set_field](set_value):
                             field_update[set_field] = set_value
                         else:
-                            print(self.validator.get_format_messages()[set_field])
+                            self.style_print(self.validator.get_format_messages()[set_field], "r")
                             invalid = True
                 elif set_field == '':
                     # If no fields were added stop execution
                     if len(field_update) == 0:
                         invalid = True
-                        print("No fields added for update.")
+                        self.style_print("No fields added for update.","r")
                     else:
                         end = True
                 else:
                     invalid = True
-                    print(set_field+" field does not exist.\nValid fields: "+str(field_names))
+                    self.style_print(set_field+" field does not exist.\nValid fields: "+str(field_names), "r")
         # Choose update condition
         if not invalid and not return_to_menu:
-            where = input("Enter update condition:\n")
+            where = self.style_input("Enter update condition:\n", "c")
             where = where.strip()
             return_to_menu = self.isReturn(where)
             if not return_to_menu:
@@ -248,18 +256,17 @@ class MainMenu:
                     table_success = self.dbConnection.update(field_update, where)
                     clone_success = self.dbConnection.update(field_update, where, "CLONE")
                 if table_success and clone_success:
-                    print("Records updated successfully")
+                    self.style_print("Records updated successfully", "g*")
         if return_to_menu:
-            print("Returning to menu")
-
+            self.style_print("Returning to Main Menu", "g")
 
     def delete_rows(self):
         # Delete Rows protocol
-        where = input("Specify condition for records to delete (Leave blank to delete all records):\n")
+        where = self.style_input("Specify condition for records to delete (Leave blank to delete all records):\n", "c")
         where = where.strip()
         return_to_menu = self.isReturn(where)
         if not return_to_menu:
-            confirm = input("Are you sure you want to delete these records? y for yes:\n")
+            confirm = self.style_input("Are you sure you want to delete these records? y for yes:\n", "y")
             confirm = confirm.strip()
             return_to_menu = self.isReturn(confirm)
             if not return_to_menu:
@@ -273,9 +280,9 @@ class MainMenu:
                         table_success = self.dbConnection.delete(where)
                         clone_success = self.dbConnection.delete(where, "CLONE")
                     if table_success and clone_success:
-                        print("Records deleted successfully")
+                        self.style_print("Records deleted successfully", "g*")
         if return_to_menu:
-            print("Returning to menu")
+            self.style_print("Returning to Main Menu", "g")
 
 
 def main():
