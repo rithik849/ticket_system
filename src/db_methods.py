@@ -25,7 +25,7 @@ class DatabaseAccessor(UI):
         self.style_print("table created successfully", "g")
         self.conn.commit()
 
-    def hasTable(self, table_name="TICKETS"):
+    def hasTable(self, table_name):
         table_exists = self.conn.execute("SELECT name FROM sqlite_master WHERE type='table' AND name='"
                                          + table_name + "'")
         return bool(table_exists.fetchall())
@@ -117,14 +117,15 @@ class DatabaseAccessor(UI):
             return False
 
     def get_number_of_rows(self, table_name="TICKETS"):
-        result = [[0]]
+        result = 0
         try:
             result = self.conn.execute('''SELECT COUNT(*) FROM ''' + table_name)
+            return result.fetchone()[0]
         except Exception as e:
             if table_name == "TICKETS":
                 self.style_print(e, "r")
 
-        return result.fetchone()[0]
+        return result
 
     # Returns the name of each field
     def get_field_names(self):
@@ -163,3 +164,9 @@ class DatabaseAccessor(UI):
     # Called when quiting the application
     def disconnect(self):
         self.conn.close()
+
+    # Called during testing
+    def reconnect(self):
+        # Disconnect any previous connection safely, before reconnecting.
+        self.disconnect()
+        self.conn = sqlite3.connect("test.db")

@@ -9,7 +9,7 @@ class LogFileIO:
         except ValueError as e:
             print(e)
 
-    def append_messages(self,msg_list):
+    def append_messages(self, msg_list):
         try:
             with open("log.txt", "a+") as file:
                 file.write("\n".join(msg_list)+"\n")

@@ -39,13 +39,15 @@ class Validator:
         self.dbConn = DatabaseAccessor()
         self.ids = [rec[0] for rec in self.dbConn.read("INCIDENT_ID") if rec != ["INCIDENT_ID"]]
         self.formatMessages = {}
-        self.errors = set()
         self.fieldNames = self.dbConn.get_field_names()
         self.fieldTypes = self.dbConn.get_field_types()
         self.element_count = len(self.fieldTypes)
         self.ruleMap = dict()
         self.create_rule_map()
         self.format_messages()
+
+    def __del__(self):
+        self.disconnect()
 
     def disconnect(self):
         self.dbConn.disconnect()

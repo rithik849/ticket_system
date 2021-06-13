@@ -1,6 +1,5 @@
 
 from db_methods import DatabaseAccessor
-import sys
 import os
 from validator import Validator
 from datetime import datetime
@@ -43,7 +42,7 @@ class MainMenu(UI):
 
     # Setup table if it does not already exist.
     def setup(self):
-        if not self.dbConnection.hasTable():
+        if not self.dbConnection.hasTable("TICKETS"):
             self.dbConnection.create_table()
             self.dbConnection.populate()
 
@@ -119,7 +118,7 @@ class MainMenu(UI):
         self.dbConnection.destroy("CLONE")
         # Disconnect all database connections.
         self.dbConnection.disconnect()
-        self.validator.disconnect()
+
 
     def create_row(self):
         # Create Row protocol
