@@ -193,7 +193,8 @@ class MainMenu(UI):
         invalid_condition = True
         # Only allow the input of a where clause if the selected fields are valid.
         while invalid_condition and not return_to_menu:
-            where = self.style_input("Enter selection condition \n(Leave blank if you want all records):\n", "c")
+            where = self.style_input("Enter selection condition in the form of a SQL WHERE clause " +
+                                     "\n(Leave blank if you want all records):\n", "c")
             where = None if where.strip() == '' else where.strip()
             return_to_menu = self.isReturn(where)
             if not return_to_menu:
@@ -262,7 +263,7 @@ class MainMenu(UI):
             table_success = False
             clone_success = False
             while not return_to_menu and not (table_success and clone_success):
-                where = self.style_input("Enter update condition:\n", "c")
+                where = self.style_input("Enter update condition in the form of a SQL WHERE clause:\n", "c")
                 where = where.strip()
                 return_to_menu = self.isReturn(where)
                 if not return_to_menu:
@@ -285,7 +286,8 @@ class MainMenu(UI):
         clone_success = False
         while not return_to_menu and not (table_success and clone_success):
             # Delete Rows protocol
-            where = self.style_input("Specify condition for records to delete (Leave blank to delete all records):\n", "c")
+            where = self.style_input("Specify condition for records to delete in the form of a SQL WHERE clause" +
+                                     " (Leave blank to delete all records):\n", "c")
             where = where.strip()
             return_to_menu = self.isReturn(where)
             if not return_to_menu:
