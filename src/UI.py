@@ -22,13 +22,19 @@ class UI:
         self.end_style = "\033[0m"
 
     def style_print(self, msg, style=""):
+        toPrint = ""
         for char in style:
-            print(self.text_style[char], end="")
-        print(msg, end="\r")
-        print(self.end_style)
+            toPrint = toPrint + self.text_style[char]
+            # print(self.text_style[char], end="")
+        toPrint = toPrint + str(msg) + self.end_style
+        # print(msg, end="\r")
+        # print(self.end_style)
+        print(toPrint)
 
     def style_input(self, msg, style=""):
+        toPrint = ""
         for char in style:
-            print(self.text_style[char], end="")
-        user_input = input(msg+self.end_style)
+            toPrint = toPrint + self.text_style[char]
+            # print(self.text_style[char], end="")
+        user_input = input(toPrint + str(msg) + self.end_style)
         return user_input

@@ -66,7 +66,7 @@ class DatabaseAccessor(UI):
             setString = []
             # Create the assignments for updates
             for key in field_updates.keys():
-                setString += [str(key)+"='"+str(field_updates[key])]
+                setString += [str(key)+"='"+str(field_updates[key])+"'"]
             # Join the set strings.
             setString = ", ".join(setString)
             statement = '''UPDATE ''' + table_name + ''' SET ''' + setString
@@ -157,6 +157,7 @@ class DatabaseAccessor(UI):
     # Destroy table
     def destroy(self, table_name="TICKETS"):
         self.conn.execute('DROP TABLE ' + table_name)
+        self.conn.commit()
 
     def __del__(self):
         self.disconnect()

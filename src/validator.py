@@ -112,7 +112,7 @@ class Validator:
                 self.formatMessages[name] = message + "YYYY-MM-DD"
             elif name in ["INCIDENT_TIME"]:
                 self.formatMessages[name] = message + "HH:MM"
-            elif name in ["RAISED_BY", "EMPLOYEE_ASSIGNED"]:
+            elif name in ["RAISED_BY", "ASSIGNED_TO"]:
                 self.formatMessages[name] = message + \
                                             "a unique 5 character string starting with 'emp' " + \
                                             "and ending with 2 digits."
@@ -129,16 +129,16 @@ class Validator:
         def check_id(identifier): return [rec[0] for rec in self.dbConn.read()].count(identifier) == 1
         errors = {}
         for record in records:
-            firstError = True
+            firstErrorOfRecord = True
             index = 0
             for field in self.fieldNames:
                 cond = (index != 0 and not self.ruleMap[field](record[index])) or (index == 0 and not check_id(record[index]))
                 if cond:
 
-                    if firstError:
+                    if firstErrorOfRecord:
                         errors[record] = ""
 
                     errors[record] += "\t" + self.formatMessages[field] + "\n"
-                    firstError = False
+                    firstErrorOfRecord = False
                 index += 1
         return errors
