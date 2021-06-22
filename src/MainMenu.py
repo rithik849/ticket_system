@@ -50,7 +50,6 @@ class MainMenu(UI):
     # Write the access time and the erroneous records as well as what errors have occurred in each record.
     def write_errors(self, errors):
         if errors:
-            to_write = ""
             fileIO = LogFileIO()
             to_write = "Access Time: " + str(datetime.now()) + "\n"
             for key in errors.keys():
@@ -108,7 +107,6 @@ class MainMenu(UI):
             return True
         return False
 
-
     def __del__(self):
         self.dbConnection.reconnect()
         if self.dbConnection.hasTable("CLONE"):
@@ -122,7 +120,6 @@ class MainMenu(UI):
         newRecord = []
         fieldNames = self.dbConnection.get_field_names()
         index = 0
-        error = False
         return_to_menu = False
         # Enter values for each field
         while index < len(fieldNames) and not return_to_menu:
@@ -148,7 +145,6 @@ class MainMenu(UI):
 
     def select_rows(self):
         # Selection of Rows Protocol
-        invalid = False
         end = False
         firstIteration = True
         fieldNames = self.dbConnection.get_field_names()
@@ -225,7 +221,6 @@ class MainMenu(UI):
     def update_rows(self):
         # Update rows protocol
         field_names = self.dbConnection.get_field_names()
-        invalid = False
         end = False
         field_update = {}
         return_to_menu = False
@@ -273,7 +268,6 @@ class MainMenu(UI):
             where = where.strip()
             return_to_menu = self.isReturn(where)
             if not return_to_menu:
-                table_success = False
                 if where == '':
                     table_success = self.dbConnection.update(field_update, error_ids=self.error_ids)
                 else:
@@ -298,7 +292,6 @@ class MainMenu(UI):
                 return_to_menu = self.isReturn(confirm)
                 if not return_to_menu:
                     if str.lower(confirm).strip() == 'y':
-                        table_success = False
                         if where.strip() == '':
                             table_success = self.dbConnection.delete(error_ids=self.error_ids)
                         else:
