@@ -60,20 +60,16 @@ class DatabaseAccessor(UI):
             return False
 
     # Add updates to records
-    def update(self, field_updates, condition=None, table_name="TICKETS"):
+    def update(self, field_updates, condition=None, error_ids=tuple(), table_name="TICKETS"):
 
         try:
-            setString = []
             # Create the assignments for updates
-            for key in field_updates.keys():
-                setString += [str(key)+"='"+str(field_updates[key])+"'"]
+            setString = [str(key)+"='"+str(field_updates[key])+"'" for key in field_updates.keys()]
+
             # Join the set strings.
             setString = ", ".join(setString)
             statement = '''UPDATE ''' + table_name + ''' SET ''' + setString
-
-            # Add condition if available
-            if condition:
-                statement = statement + ''' WHERE ''' + condition
+            statement = self.add_where_statement(statement, condition, error_ids)
 
             self.conn.execute(statement)
             self.conn.commit()
@@ -84,13 +80,12 @@ class DatabaseAccessor(UI):
             return False
 
     # Selection statements
-    def read(self, select="*", condition=None, table_name="TICKETS"):
+    def read(self, select="*", condition=None, error_ids=tuple(), table_name="TICKETS"):
         records = None
         try:
             statement = '''SELECT ''' + str(select) + ''' FROM ''' + table_name
-
-            if condition:
-                statement = statement + ''' WHERE ''' + str(condition)
+            statement = self.add_where_statement(statement, condition, error_ids)
+            statement += ''' ORDER BY INCIDENT_ID'''
 
             result = self.conn.execute(statement)
 
@@ -103,18 +98,32 @@ class DatabaseAccessor(UI):
         return records
 
     # Delete statement
-    def delete(self, condition=None, table_name="TICKETS"):
+    def delete(self, condition=None, error_ids=tuple(), table_name="TICKETS"):
         try:
-            if condition:
-                self.conn.execute('''DELETE FROM ''' + table_name + ''' WHERE ''' + str(condition))
-            else:
-                self.conn.execute('''DELETE FROM ''' + table_name)
+            statement = '''DELETE FROM ''' + table_name
+            statement = self.add_where_statement(statement, condition, error_ids)
+
+            self.conn.execute(statement)
             self.conn.commit()
             return True
         except Exception as e:
             if table_name == "TICKETS":
                 self.style_print(e, "r")
             return False
+
+    def add_where_statement(self, statement="", condition=None, error_ids=tuple()):
+        # If there are erroneous records ignore them
+        if len(error_ids) > 0:
+            # Create collection of erroneous primary key values
+            error_id_statement = "(" + ",".join(['\'' + err + '\'' for err in error_ids]) + ")"
+            statement += ''' WHERE (INCIDENT_ID NOT IN ''' + error_id_statement + ''')'''
+            # Add a condition if available
+            if condition:
+                statement += ''' AND (''' + condition + ''')'''
+        elif condition:
+            # Add condition if available
+            statement = statement + ''' WHERE ''' + condition
+        return statement
 
     def get_number_of_rows(self, table_name="TICKETS"):
         result = 0

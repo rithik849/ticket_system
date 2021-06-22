@@ -1,5 +1,4 @@
 from db_methods import DatabaseAccessor
-import os
 from validator import Validator
 from datetime import datetime
 from logFileIO import LogFileIO
@@ -23,17 +22,13 @@ class MainMenu(UI):
             "h": "Help",
             "q": "Quit"
         }
-        # Clone the database table structure. We perform read operations on the clone only.
-        # And all other operations on both tables.
-        # Validate according to the original table.
-        self.dbConnection.clone_table()
+
         # Read all the records in the table.
         records = self.dbConnection.read()
         records.pop()
         # Validate all records, keeping a record of all invalid fields.
         errors = self.validator.table_validation(records)
-        # Add all valid records into the clone.
-        self.filter_erroneous(records, errors)
+        self.error_ids = tuple([err[0] for err in errors.keys()])
         self.write_errors(errors)
 
     def isReturn(self, input_value):
@@ -66,7 +61,8 @@ class MainMenu(UI):
     # The main run loop of the application.
     def run(self):
         try:
-            while True:
+            stop = False
+            while not stop:
                 # Select an option
                 option_input = self.style_input("Select option " + str(self.options) + " :", "b")
                 option_input = str.lower(option_input.strip())
@@ -84,7 +80,7 @@ class MainMenu(UI):
                 elif option_input == "h":
                     self.help()
                 elif option_input == "q":
-                    self.quit()
+                    stop = self.quit()
                 elif option_input == ";":
                     self.style_print("Already at main menu.", "g")
                 else:
@@ -109,12 +105,15 @@ class MainMenu(UI):
             self.style_print("Returning to Main Menu", "g")
         elif str.lower(confirm.strip()) == 'y':
             self.style_print("Quiting Application", "g")
-            self.__del__()
-            os._exit(1)
+            return True
+        return False
+
 
     def __del__(self):
-        # Destroy the cloned table for the next time the application is activated.
-        self.dbConnection.destroy("CLONE")
+        self.dbConnection.reconnect()
+        if self.dbConnection.hasTable("CLONE"):
+            # Destroy the cloned table for the next time the application is activated.
+            self.dbConnection.destroy("CLONE")
         # Disconnect all database connections.
         self.dbConnection.disconnect()
 
@@ -144,8 +143,7 @@ class MainMenu(UI):
             self.style_print("Returning to Main Menu", "g")
         else:
             table_success = self.dbConnection.insert(tuple(newRecord))
-            clone_success = self.dbConnection.insert(tuple(newRecord), "CLONE")
-            if table_success and clone_success:
+            if table_success:
                 self.style_print("Record added successfully", "g")
 
     def select_rows(self):
@@ -177,13 +175,14 @@ class MainMenu(UI):
                         select = "*"
                     end = True
                 else:
-                    firstIteration = False
+
                     # If the input does not match a field we give an error.
                     # Otherwise add the field to a list of selected fields.
                     if select not in fieldNames:
                         self.style_print("No such field " + select + ". Valid fields are: " + str(fieldNames), "r")
                     else:
                         if select not in selected_fields:
+                            firstIteration = False
                             selected_fields = selected_fields + [select]
                         else:
                             self.style_print("Field " + str(select) + " already selected", "r")
@@ -193,20 +192,29 @@ class MainMenu(UI):
         invalid_condition = True
         # Only allow the input of a where clause if the selected fields are valid.
         while invalid_condition and not return_to_menu:
-            where = self.style_input("Enter selection condition \n(Leave blank if you want all records):\n", "c")
+            where = self.style_input("Enter selection condition in the form of a SQL WHERE clause " +
+                                     "\n(Leave blank if you want all records):\n", "c")
             where = None if where.strip() == '' else where.strip()
             return_to_menu = self.isReturn(where)
             if not return_to_menu:
                 if select == "*":
-                    selected_records = self.dbConnection.read(select, where, "CLONE")
+                    selected_records = self.dbConnection.read(
+                        select, where, error_ids=self.error_ids
+                    )
                 else:
-                    selected_records = self.dbConnection.read(",".join(list(selected_fields)), where, "CLONE")
+                    selected_records = self.dbConnection.read(
+                        ",".join(list(selected_fields)), where, error_ids=self.error_ids
+                    )
 
                 if selected_records:
-                    self.table.set_fields(selected_records.pop())
-                    self.table.set_records(selected_records)
+                    fields = selected_records[-1]
+                    records = selected_records[:-1]
+                    self.table.set_fields(fields)
+                    self.table.set_records(records)
                     self.table.print_table()
                     self.table.clear()
+                    return selected_records
+
                 invalid_condition = selected_records is None
                 if invalid_condition:
                     self.style_print("Please enter a valid SQL condition.", "r")
@@ -258,34 +266,30 @@ class MainMenu(UI):
                     self.style_print(set_field + " field does not exist.\nValid fields: " + str(field_names), "r")
 
         # Choose update condition
-        if not invalid and not return_to_menu:
-            table_success = False
-            clone_success = False
-            while not return_to_menu and not (table_success and clone_success):
-                where = self.style_input("Enter update condition:\n", "c")
-                where = where.strip()
-                return_to_menu = self.isReturn(where)
-                if not return_to_menu:
-                    table_success = False
-                    clone_success = False
-                    if where == '':
-                        table_success = self.dbConnection.update(field_update)
-                        clone_success = self.dbConnection.update(field_update, "CLONE")
-                    else:
-                        table_success = self.dbConnection.update(field_update, where)
-                        clone_success = self.dbConnection.update(field_update, where, "CLONE")
-                    if table_success and clone_success:
-                        self.style_print("Records updated successfully", "g*")
+        # if not invalid and not return_to_menu:
+        table_success = False
+        while not return_to_menu and not table_success:
+            where = self.style_input("Enter update condition in the form of a SQL WHERE clause:\n", "c")
+            where = where.strip()
+            return_to_menu = self.isReturn(where)
+            if not return_to_menu:
+                table_success = False
+                if where == '':
+                    table_success = self.dbConnection.update(field_update, error_ids=self.error_ids)
+                else:
+                    table_success = self.dbConnection.update(field_update, where, error_ids=self.error_ids)
+                if table_success:
+                    self.style_print("Records updated successfully", "g*")
         if return_to_menu:
             self.style_print("Returning to Main Menu", "g")
 
     def delete_rows(self):
         return_to_menu = False
         table_success = False
-        clone_success = False
-        while not return_to_menu and not (table_success and clone_success):
+        while not return_to_menu and not table_success:
             # Delete Rows protocol
-            where = self.style_input("Specify condition for records to delete (Leave blank to delete all records):\n", "c")
+            where = self.style_input("Specify condition for records to delete in the form of a SQL WHERE clause" +
+                                     " (Leave blank to delete all records):\n", "c")
             where = where.strip()
             return_to_menu = self.isReturn(where)
             if not return_to_menu:
@@ -295,14 +299,11 @@ class MainMenu(UI):
                 if not return_to_menu:
                     if str.lower(confirm).strip() == 'y':
                         table_success = False
-                        clone_success = False
                         if where.strip() == '':
-                            table_success = self.dbConnection.delete()
-                            clone_success = self.dbConnection.delete("CLONE")
+                            table_success = self.dbConnection.delete(error_ids=self.error_ids)
                         else:
-                            table_success = self.dbConnection.delete(where)
-                            clone_success = self.dbConnection.delete(where, "CLONE")
-                        if table_success and clone_success:
+                            table_success = self.dbConnection.delete(where, error_ids=self.error_ids)
+                        if table_success:
                             self.style_print("Records deleted successfully", "g*")
         if return_to_menu:
             self.style_print("Returning to Main Menu", "g")

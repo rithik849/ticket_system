@@ -72,10 +72,10 @@ class Validator:
                                                [
                                                    rec[0] for rec in self.dbConn.read("INCIDENT_ID")
                                                    if rec != ['INCIDENT_ID']
-                                               ] and re.fullmatch(r'inc(\d+)', x)
+                                               ] and (re.fullmatch(r'inc(\d+)', x) is not None)
             elif name == 'STATUS':
                 # Check the status is one from the group
-                self.ruleMap[name] = lambda x: str.upper(str(x)) in ["NEW", "IN PROGRESS", "COMPLETE"]
+                self.ruleMap[name] = lambda x: str(x) in ["New", "In Progress", "Complete"]
             elif name == 'PRIORITY':
                 # Check priority is either 1 2 or 3.
                 self.ruleMap[name] = lambda x: str(x) in ["1", "2", "3"]
@@ -126,7 +126,8 @@ class Validator:
 
     # Used to validate the rows in a table
     def table_validation(self, records):
-        def check_id(identifier): return [rec[0] for rec in self.dbConn.read()].count(identifier) == 1
+        def check_id(identifier): return [rec[0] for rec in self.dbConn.read()].count(identifier) == 1\
+                                         and (re.fullmatch(r'inc(\d+)', identifier) is not None)
         errors = {}
         for record in records:
             firstErrorOfRecord = True

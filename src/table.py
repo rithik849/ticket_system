@@ -32,7 +32,7 @@ class Table(UI):
             index += 1
 
         for size in row_spacing.values():
-            spacing += "{:<" + str(size+10) + "} "
+            spacing += "{:<" + str(size+10) + "}"
 
         self.style_print(spacing.format(*self.fields), "g*")
 
