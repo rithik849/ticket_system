@@ -40,13 +40,6 @@ class MainMenu(UI):
             self.dbConnection.create_table()
             self.dbConnection.populate()
 
-    # Filter out invalid records, and add valid records to the cloned table
-    def filter_erroneous(self, records, errors):
-        invalid_records = errors.keys()
-
-        valid_records = list(set(records) - set(invalid_records))
-        self.dbConnection.insert_rows(valid_records, "CLONE")
-
     # Write the access time and the erroneous records as well as what errors have occurred in each record.
     def write_errors(self, errors):
         if errors:
@@ -108,10 +101,6 @@ class MainMenu(UI):
         return False
 
     def __del__(self):
-        self.dbConnection.reconnect()
-        if self.dbConnection.hasTable("CLONE"):
-            # Destroy the cloned table for the next time the application is activated.
-            self.dbConnection.destroy("CLONE")
         # Disconnect all database connections.
         self.dbConnection.disconnect()
 
@@ -155,7 +144,6 @@ class MainMenu(UI):
 
         # Allow user to select multiple fields
         while not return_to_menu and not end:
-            # and not end
             # In the first iteration, not specifying a value selects all fields.
             # Otherwise it selects all previously chosen fields.
             if firstIteration:
@@ -226,7 +214,6 @@ class MainMenu(UI):
         return_to_menu = False
         # While we still have values to add, or do not have an invalid input.
         while not end and not return_to_menu:
-            # not invalid
             # Select the field of which the value should be changes
             set_field = self.style_input("Select field to change value:\n(Leave blank to end changes)\n", "c")
             set_field = set_field.strip()
@@ -261,7 +248,6 @@ class MainMenu(UI):
                     self.style_print(set_field + " field does not exist.\nValid fields: " + str(field_names), "r")
 
         # Choose update condition
-        # if not invalid and not return_to_menu:
         table_success = False
         while not return_to_menu and not table_success:
             where = self.style_input("Enter update condition in the form of a SQL WHERE clause:\n", "c")
@@ -280,24 +266,32 @@ class MainMenu(UI):
     def delete_rows(self):
         return_to_menu = False
         table_success = False
-        while not return_to_menu and not table_success:
+        exit = False
+        while not return_to_menu and not table_success and not exit:
             # Delete Rows protocol
             where = self.style_input("Specify condition for records to delete in the form of a SQL WHERE clause" +
                                      " (Leave blank to delete all records):\n", "c")
             where = where.strip()
             return_to_menu = self.isReturn(where)
             if not return_to_menu:
+                # Confirmation of deletion
                 confirm = self.style_input("Are you sure you want to delete these records? y for yes:\n", "y")
                 confirm = confirm.strip()
                 return_to_menu = self.isReturn(confirm)
+
+                # Check if the user wishes to return to the main menu.
                 if not return_to_menu:
                     if str.lower(confirm).strip() == 'y':
+                        # Delete rows ignoring the erroneous ids.
                         if where.strip() == '':
                             table_success = self.dbConnection.delete(error_ids=self.error_ids)
                         else:
                             table_success = self.dbConnection.delete(where, error_ids=self.error_ids)
                         if table_success:
                             self.style_print("Records deleted successfully", "g*")
+                    else:
+                        exit = True
+
         if return_to_menu:
             self.style_print("Returning to Main Menu", "g")
 

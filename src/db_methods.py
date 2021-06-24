@@ -17,23 +17,25 @@ class DatabaseAccessor(UI):
         ASSIGNED_TO CHAR(5) NOT NULL,
         PRIORITY INTEGER NOT NULL);'''
 
-    # Create table
-    def create_table(self):
+    # Create a table
+    def create_table(self, table_name=None):
+        if table_name:
+            table = self.table.replace("TICKETS", table_name)
+        else:
+            table = self.table
 
-        self.conn.execute(self.table)
+        self.conn.execute(table)
 
         self.style_print("table created successfully", "g")
         self.conn.commit()
 
+    # Check if a table exists
     def hasTable(self, table_name):
         table_exists = self.conn.execute("SELECT name FROM sqlite_master WHERE type='table' AND name='"
                                          + table_name + "'")
         return bool(table_exists.fetchall())
 
-    def clone_table(self):
-        self.conn.execute(self.table.replace("TICKETS", "CLONE"))
-        self.conn.commit()
-
+    # Insert a list of records into a table
     def insert_rows(self, records, table_name="TICKETS"):
         try:
             if records:
@@ -111,6 +113,7 @@ class DatabaseAccessor(UI):
                 self.style_print(e, "r")
             return False
 
+    # Where statement that takes a condition and adds the conditions to ignore a number of records.
     def add_where_statement(self, statement="", condition=None, error_ids=tuple()):
         # If there are erroneous records ignore them
         if len(error_ids) > 0:
@@ -125,6 +128,7 @@ class DatabaseAccessor(UI):
             statement = statement + ''' WHERE ''' + condition
         return statement
 
+    # Returns the number of rows in a table.
     def get_number_of_rows(self, table_name="TICKETS"):
         result = 0
         try:
@@ -159,7 +163,7 @@ class DatabaseAccessor(UI):
                            ('inc6', '2021-03-04', '23:00', 'emp67', "Complete", 'Android Team', 'emp44', '3'),
                            ('inc7', '2021-03-03', '04:00', 'emp34', "New", 'Fullstack Team', 'emp12', '2'),
                            ('inc8', '2021-03-05', '04:00', 'emp43', "In Progress", 'All', 'emp43', '2'),
-                           ('inc9', '2021-06-11', '16:30', 'emp66', "Complete", 'Linux Team', 'emp10', '1')]
+                           ('inc9', '2021-06-11', '16:30', 'emp66', "Complete", 'Linux Team', 'emp10', '2')]
         self.insert_rows(population_data)
         self.conn.commit()
 
