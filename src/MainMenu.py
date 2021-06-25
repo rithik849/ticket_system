@@ -56,7 +56,7 @@ class MainMenu(UI):
             stop = False
             while not stop:
                 # Select an option
-                option_input = self.style_input("Select option " + str(self.options) + " :", "b")
+                option_input = self.style_input("Select option (Press 'h' for help) :", "b")
                 option_input = str.lower(option_input.strip())
                 # Check if the option is valid and apply the correct routine
                 if option_input == ";":

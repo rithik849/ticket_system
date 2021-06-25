@@ -2,17 +2,6 @@ from db_methods import DatabaseAccessor
 import re
 from datetime import datetime
 
-
-# Validates the date is in the format of year-month-day
-def datetime_is_valid(datetime_to_check, datetime_format):
-    try:
-
-        res = bool(datetime.strptime(datetime_to_check, datetime_format))
-    except ValueError:
-        res = False
-    return res
-
-
 # Validates the date is in the format of year-month-day
 def date_is_valid(date_to_check):
     try:
@@ -37,11 +26,9 @@ class Validator:
 
     def __init__(self):
         self.dbConn = DatabaseAccessor()
-        self.ids = [rec[0] for rec in self.dbConn.read("INCIDENT_ID") if rec != ["INCIDENT_ID"]]
-        self.formatMessages = {}
         self.fieldNames = self.dbConn.get_field_names()
         self.fieldTypes = self.dbConn.get_field_types()
-        self.element_count = len(self.fieldTypes)
+        self.formatMessages = {}
         self.ruleMap = dict()
         self.create_rule_map()
         self.format_messages()
